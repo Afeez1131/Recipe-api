@@ -1,13 +1,31 @@
-from core.models import Recipe
+from core.models import Recipe, Tag, Ingredient
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
 
 from rest_framework.test import APIClient
 from rest_framework import status
-from recipe.serializers import RecipeSerializer
+from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
 RECIPE_URL = reverse('recipe:recipe-list')
+
+
+# api/recipe/recipes/
+# api/recipe/recipe/1
+
+def detail_url(recipe_id):
+    """return a recipe detail url"""
+    return reverse('recipe:recipe-detail', args=[recipe_id])
+
+
+def sample_tag(user, name='Main Course'):
+    """create and return a sample tag"""
+    return Tag.objects.create(user=user, name=name)
+
+
+def sample_ingredient(user, name='beef'):
+    """create and return ingredient"""
+    return Ingredient.objects.create(user=user, name=name)
 
 
 def sample_recipe(user, **params):
@@ -45,31 +63,6 @@ class PrivateRecipeTestCase(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_retriev_recipe_for_authenticated_user(self):
-        """ test recipe endpoint  for an authenticated user successfull"""
-        Recipe.objects.create(
-            user=self.user,
-            title='Indomie',
-            price=800.00,
-            time_minutes=10
-        )
-
-        Recipe.objects.create(
-            user=self.user,
-            title='Jollof Rice + Chicken',
-            price=15.00,
-            time_minutes=10
-        )
-
-        res = self.client.get(RECIPE_URL)
-
-        recipes = Recipe.objects.all().order_by('-id')
-        serializer = RecipeSerializer(recipes, many=True)
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-        self.assertEqual(res.data, serializer.data)
-
     def test_retrieving_recipe_for_authenticated_user(self):
         """will rest retrieving recipe list for the authenticated user"""
         test_user = get_user_model().objects.create_user(
@@ -87,3 +80,16 @@ class PrivateRecipeTestCase(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data, serializer.data)
 
+    def test_recipe_detail_view(self):
+        """test viewing a recipe detail"""
+        recipe = sample_recipe(user=self.user)
+        recipe.tags.add(sample_tag(user=self.user))
+        recipe.ingredients.add(sample_ingredient(user=self.user))
+
+        url = detail_url(recipe.id)
+        res = self.client.get(url)
+
+        serializer = RecipeDetailSerializer(recipe)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
