@@ -74,11 +74,11 @@ class PublicUserApiTest(TestCase):
         payload = {
             'email': 'admin@gmail.com',
             'password': 'testpass',
+            'name': 'test name'
         }
-        create_user(**payload)
+        get_user_model().objects.create_user(**payload)
         res = self.client.post(TOKEN_URL, payload)
-        print(res, res.data)
-        # self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('token', res.data)
 
     def test_create_user_token_invalid_data(self):
