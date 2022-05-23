@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.conf import settings
 
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extrafields):
         """create and save new user"""
@@ -40,6 +41,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Tag(models.Model):
     """Tag to be used for a recipe"""
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class Ingredient(models.Model):
+    """ingredients to be used for recipe"""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
